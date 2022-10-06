@@ -8,10 +8,28 @@ jobs:
       - checkout
       - run: sudo apt install yasm nasm
       - run: ./configure --prefix=$(pwd)/out && make && make install
-      - run: cd out && tar -cvzf ../ffmpeg.tar . && cd .. && aws s3 cp ffmpeg.tar s3://wmg-deploy/ffmpeg.tar
+      - run: mkdir -p build && cd out && tar -cvzf ../build/ffmpeg.tar .
+      - persist_to_workspace:
+          root: build
+          paths:
+           - ffmpeg.tar
+  publish:
+    machine:
+      image: ubuntu-2204:2022.07.1
+    steps:
+      - checkout
+      - attach_workspace:
+          at: build
+      - run: aws s3 cp build/ffmpeg.tar s3://wmg-deploy/ffmpeg.tar
 
 workflows:
   version: 2
   build-and-publish:
     jobs:
       - build
+      - publish:
+          requires:
+            - build
+          filters:
+            branches:
+              only: vendor
