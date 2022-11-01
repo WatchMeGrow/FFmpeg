@@ -43,6 +43,7 @@ typedef struct VideoMuxData {
     char target[4][1024];
     int update;
     int use_strftime;
+    int use_strftime_mkdir;
     int frame_pts;
     const char *muxer;
     int use_rename;
@@ -156,6 +157,20 @@ static int write_packet(AVFormatContext *s, AVPacket *pkt)
             av_log(s, AV_LOG_ERROR, "Could not get frame filename with strftime\n");
             return AVERROR(EINVAL);
         }
+
+        if (img->use_strftime_mkdir) {
+            const char *dir;
+            char *fn_copy = av_strdup(filename);
+            if (!fn_copy)
+                return AVERROR(ENOMEM);
+            dir = av_dirname(fn_copy);
+            if (ff_mkdir_p(dir) == -1 && errno != EEXIST) {
+                av_log(s, AV_LOG_ERROR, "Could not create directory %s with use_strftime_mkdir\n", dir);
+                av_freep(&fn_copy);
+                return AVERROR(errno);
+            }
+            av_freep(&fn_copy);
+        }
     } else if (img->frame_pts) {
         if (av_get_frame_filename2(filename, sizeof(filename), s->url, pkt->pts, AV_FRAME_FILENAME_FLAGS_MULTIPLE) < 0) {
             av_log(s, AV_LOG_ERROR, "Cannot write filename by pts of the frames.");
@@ -254,6 +269,7 @@ static const AVOption muxoptions[] = {
     { "update",       "continuously overwrite one file", OFFSET(update),  AV_OPT_TYPE_BOOL, { .i64 = 0 }, 0,       1, ENC },
     { "start_number", "set first number in the sequence", OFFSET(start_img_number), AV_OPT_TYPE_INT,  { .i64 = 1 }, 0, INT_MAX, ENC },
     { "strftime",     "use strftime for filename", OFFSET(use_strftime),  AV_OPT_TYPE_BOOL, { .i64 = 0 }, 0, 1, ENC },
+    { "strftime_mkdir", "create directory component in strftime-generated filename", OFFSET(use_strftime_mkdir), AV_OPT_TYPE_BOOL, {.i64 = 0 }, 0, 1, ENC },
     { "frame_pts",    "use current frame pts for filename", OFFSET(frame_pts),  AV_OPT_TYPE_BOOL, { .i64 = 0 }, 0, 1, ENC },
     { "atomic_writing", "write files atomically (using temporary files and renames)", OFFSET(use_rename), AV_OPT_TYPE_BOOL, { .i64 = 0 }, 0, 1, ENC },
     { "protocol_opts", "specify protocol options for the opened files", OFFSET(protocol_opts), AV_OPT_TYPE_DICT, {0}, 0, 0, ENC },
