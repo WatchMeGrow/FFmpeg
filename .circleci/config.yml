@@ -6,8 +6,8 @@ jobs:
       image: ubuntu-2204:2022.07.1
     steps:
       - checkout
-      - run: sudo apt install yasm nasm
-      - run: ./configure --prefix=$(pwd)/out && make && make install
+      - run: sudo apt install yasm nasm libsvtav1-dev
+      - run: ./configure --prefix=$(pwd)/out --enable-libsvtav1 --enable-encoder=libsvtav1 && make && make install
       - run: mkdir -p build && cd out && tar -cvzf ../build/ffmpeg.tar .
       - persist_to_workspace:
           root: build
