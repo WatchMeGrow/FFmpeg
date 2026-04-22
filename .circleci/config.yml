@@ -6,6 +6,8 @@ jobs:
       image: ubuntu-2204:current
     steps:
       - checkout
+      - run: sudo add-apt-repository universe -y
+      - run: sudo apt update
       - run: sudo apt install yasm nasm libsvtav1-dev
       - run: ./configure --prefix=$(pwd)/out --enable-libsvtav1 --enable-encoder=libsvtav1 && make && make install
       - run: mkdir -p build && cd out && tar -cvzf ../build/ffmpeg.tar .
