@@ -8,8 +8,44 @@ jobs:
       - checkout
       - run: sudo add-apt-repository universe -y
       - run: sudo apt update
-      - run: sudo apt install yasm nasm libsvtav1-dev libsvtav1enc-dev
-      - run: ./configure --prefix=$(pwd)/out --enable-libsvtav1 --enable-encoder=libsvtav1 && make && make install
+      - run: sudo apt install yasm nasm libsvtav1-dev libsvtav1enc-dev cmake git build-essential
+      - restore_cache:
+          keys:
+            - svtav1-v0.9.0-ubuntu2204-v1
+      - run:
+          name: Build SVT-AV1 (static)
+          command: |
+            cd /tmp
+            git clone --depth 1 --branch v0.9.0 https://gitlab.com/AOMediaCodec/SVT-AV1.git
+            cd SVT-AV1/Build
+            cmake .. -DCMAKE_BUILD_TYPE=Release \
+              -DCMAKE_INSTALL_PREFIX=/usr/local \
+              -DBUILD_SHARED_LIBS=OFF \
+              -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+            make -j$(nproc)
+            sudo make install
+            sudo ldconfig
+      - save_cache:
+          key: svtav1-v0.9.0-ubuntu2204-v1
+          paths:
+            - /tmp/svtav1-cache
+      - run:
+          name: Verify SVT-AV1 detection
+          command: |
+            export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH
+            pkg-config --modversion SvtAv1Enc
+            pkg-config --static --libs SvtAv1Enc
+      - run:
+          name: Configure and build FFmpeg
+          command: |
+            export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH
+            ./configure \
+              --prefix=$(pwd)/out \
+              --pkg-config-flags="--static" \
+              --enable-libsvtav1 \
+              --enable-encoder=libsvtav1
+            make -j$(nproc)
+            make install
       - run: mkdir -p build && cd out && tar -cvzf ../build/ffmpeg.tar .
       - persist_to_workspace:
           root: build
@@ -25,7 +61,6 @@ jobs:
       - run: aws s3 cp build/ffmpeg.tar s3://wmg-deploy/ffmpeg.tar
 
 workflows:
-  version: 2
   build-and-publish:
     jobs:
       - build
