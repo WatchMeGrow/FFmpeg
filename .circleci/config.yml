@@ -11,12 +11,12 @@ jobs:
       - run: sudo apt install yasm nasm cmake git build-essential
       - restore_cache:
           keys:
-            - svtav1-v0.9.1-ubuntu2204-v1
+            - svtav1-v1.8.0-ubuntu2204-v1
       - run:
           name: Build SVT-AV1 (static)
           command: |
             cd /tmp
-            git clone --depth 1 --branch v0.9.1 https://gitlab.com/AOMediaCodec/SVT-AV1.git
+            git clone --depth 1 --branch v1.8.0 https://gitlab.com/AOMediaCodec/SVT-AV1.git
             cd SVT-AV1/Build
             cmake .. -DCMAKE_BUILD_TYPE=Release \
               -DCMAKE_INSTALL_PREFIX=/usr/local \
@@ -26,7 +26,7 @@ jobs:
             sudo make install
             sudo ldconfig
       - save_cache:
-          key: svtav1-v0.9.1-ubuntu2204-v1
+          key: svtav1-v1.8.0-ubuntu2204-v1
           paths:
             - /tmp/svtav1-cache
       - run:
@@ -51,6 +51,9 @@ jobs:
           root: build
           paths:
            - ffmpeg.tar
+      - store_artifacts:
+          path: build
+          destination: ffmpeg.tar
   publish:
     machine:
       image: ubuntu-2204:current
