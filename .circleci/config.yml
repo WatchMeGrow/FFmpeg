@@ -8,7 +8,7 @@ jobs:
       - checkout
       - run: sudo add-apt-repository universe -y
       - run: sudo apt update
-      - run: sudo apt install yasm nasm cmake git build-essential
+      - run: sudo apt install yasm nasm cmake git build-essential libx264-dev libx265-dev
       - restore_cache:
           keys:
             - svtav1-v1.4.1-ubuntu2204-v1
@@ -36,14 +36,21 @@ jobs:
             pkg-config --modversion SvtAv1Enc
             pkg-config --static --libs SvtAv1Enc
       - run:
+          name: Verify x265 detection
+          command: |
+            pkg-config --modversion x265
+      - run:
           name: Configure and build FFmpeg
           command: |
             export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH
             ./configure \
               --prefix=$(pwd)/out \
-              --pkg-config-flags="--static" \
               --enable-libsvtav1 \
-              --enable-encoder=libsvtav1
+              --enable-encoder=libsvtav1 \
+              --enable-libx264 \
+              --enable-libx265 \
+              --enable-gpl \
+              --extra-libs="-lpthread -lm"
             make -j$(nproc)
             make install
       - run: mkdir -p build && cd out && tar -cvzf ../build/ffmpeg.tar .
