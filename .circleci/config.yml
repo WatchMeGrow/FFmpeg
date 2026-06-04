@@ -45,12 +45,12 @@ jobs:
             export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH
             ./configure \
               --prefix=$(pwd)/out \
-              --pkg-config-flags="--static" \
               --enable-libsvtav1 \
               --enable-encoder=libsvtav1 \
               --enable-libx264 \
               --enable-libx265 \
-              --enable-gpl
+              --enable-gpl \
+              --extra-libs="-lpthread -lm"
             make -j$(nproc)
             make install
       - run: mkdir -p build && cd out && tar -cvzf ../build/ffmpeg.tar .
