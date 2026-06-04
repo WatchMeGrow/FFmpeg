@@ -43,8 +43,8 @@ jobs:
               --prefix=$(pwd)/out \
               --pkg-config-flags="--static" \
               --enable-libsvtav1 \
-              --enable-encoder=libsvtav1
-              --enable-libx264
+              --enable-encoder=libsvtav1 \
+              --enable-libx264 \
               --enable-gpl
             make -j$(nproc)
             make install
