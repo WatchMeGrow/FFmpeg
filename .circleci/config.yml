@@ -36,6 +36,10 @@ jobs:
             pkg-config --modversion SvtAv1Enc
             pkg-config --static --libs SvtAv1Enc
       - run:
+          name: Verify x265 detection
+          command: |
+            pkg-config --modversion x265
+      - run:
           name: Configure and build FFmpeg
           command: |
             export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH
